@@ -1,0 +1,20 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Runtime state
+bot_state.json
+server_data_*.json
+*.pid
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# OCR / runtime artifacts
+*.log
+
+# Kisisel yedekler
+main_smp_backup.py

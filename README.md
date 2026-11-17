@@ -4,6 +4,30 @@ A high-speed Discord client built to monitor queue-based systems, instantly secu
 
 ---
 
+## 📌 About this repository
+
+Kişisel bir fork / geliştirilmiş sürüm. Orijinal proje:
+
+- **Upstream:** [jayaplayz12/MCTiers-Queue-Sniper](https://github.com/jayaplayz12/MCTiers-Queue-Sniper)
+
+Bu depodaki eklemeler:
+
+- **Çoklu sunucu desteği** — `GUILD_IDS` / `CHANNEL_IDS` ile aynı anda birden fazla
+  sunucudaki kuyruk kanalları izlenir
+- **Join doğrulama** — butona tıklandıktan sonra kendi kullanıcı ID'si kuyruk
+  embed'inde görünene kadar (~12 sn) kontrol edilir; görünmezse "kuyruk dolu
+  olabilir" denip tekrar denenir (yanlış "katıldım" bildirimi yok)
+- **Dolu kuyruğu atlama** — embed'de `(20/20)` gibi kapasite doluysa tıklanmaz
+- **Açılışta geriye dönük tarama** — bot kapalıyken gelen "Join" mesajı kaçmaz
+- **5 saniyelik yedek polling** — event kaçarsa mesaj geçmişi taranır
+- **Türkçe çıktı + yardımcı script'ler** — `baslat.sh`, `izle.sh`, `durdur.sh`,
+  `sifirla.sh`, `hesap.sh`
+
+> ⚠️ Token'lar ve kişisel veriler repoya dahil değildir (`.env`, `bot.log`,
+> `bot_state.json`, `server_data_*.json` `.gitignore` içinde).
+
+---
+
 ## ⚡ Features
 
 - 🚀 Instant queue joining (auto button click)
@@ -17,13 +41,98 @@ A high-speed Discord client built to monitor queue-based systems, instantly secu
 
 ## 📦 Requirements
 
-- Python 3.8+
-- Windows (for sound alerts via winsound)
+- Python 3.10+ (tested on 3.14)
+- Any OS — sound alert uses `winsound` on Windows and the terminal bell elsewhere
 - Discord account token *(see warning below)*
 
 ### Install dependencies
 
-pip install discord.py ddddocr requests python-dotenv
+```bash
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+---
+
+## 🟣 Sunucular
+
+Bu depo MCTiers kuyruk sunuculari icin yapilandirildi. Aktif ayar `.env` icinde:
+
+| Sunucu | GUILD_ID | Kanal | CHANNEL_ID |
+| --- | --- | --- | --- |
+| `[1.21+] Minecraft Sword PvP Community` | `1317975081976332338` | `#waitlist-eu` | `1317975085470187621` |
+| `[1.21+] Minecraft Mace PvP Community` **(aktif)** | `1187058381849112606` | `#waitlist-eu` | `1306852692152422491` |
+| `[1.21+] Minecraft SMP PvP Community` **(aktif)** | `1224245679749206050` | `#waitlist-eu` | `1224245683129815060` |
+
+Kuyruk botu hepsinde ayni: `MCTIERS` — `1124128173609713734`.
+
+Sunucu degistirmek icin `.env` icindeki `GUILD_ID` ve `CHANNEL_ID` degerlerini
+yukaridaki tablodan kopyala; `BOT_ID` ayni kaliyor. Kanal ID'lerini elle bulmak
+zorunda degilsin: bot, sunucudaki `waitlist` / `queue` / `tester-needed` isimli
+**erisimin olan** kanallari otomatik bulur.
+
+### Sunucu verilerini cekme
+
+```bash
+.venv/bin/python main.py --scan
+.venv/bin/python main.py --scan --guild 1187058381849112606   # baska sunucu
+```
+
+Ayni anda birden fazla sunucu izlemek icin `.env`:
+
+```env
+GUILD_IDS=1224245679749206050,1317975081976332338
+CHANNEL_IDS=1224245683129815060,1317975085470187621
+```
+
+Bot, listelenen tum sunucularda `waitlist` / `queue` / `tester-needed`
+kanallarini izler; ayni anda tek kuyruga katilir (ilk acilan).
+
+- Sunucu adi, uye sayisi, rol sayisi, tum kategori/kanal listesi cikar
+- Kuyruk kanallarini ve kuyruk botunun ID'sini tespit eder
+- Sonucu `server_data_<GUILD_ID>.json` dosyasina yazar (tum kanal + rol verisi)
+- Calisan botun durumu `bot_state.json` dosyasinda tutulur
+
+Not: `waitlist-na`, `as-au-waitlist` gibi kanallar hesabinin rolune kapaliysa
+`403` doner ve otomatik olarak atlanir.
+
+### Calistirma
+
+Klasik menü ekraniyla (ön planda, `r` + Enter ile sifirlama):
+
+```bash
+./baslat.sh
+```
+
+Arka planda calistirip canli ekrani izlemek:
+
+```bash
+setsid nohup .venv/bin/python -u main.py > bot.log 2>&1 < /dev/null &
+./izle.sh          # canli ekran (Ctrl+C botu durdurmaz)
+./sifirla.sh       # join durumunu sifirla
+./durdur.sh        # botu durdur
+```
+
+Kuyruk bitince tekrar katilmak icin konsola `r` yazip Enter'a bas
+(veya arka plan modunda `./sifirla.sh`).
+
+---
+
+### Hesaplar
+
+Token'lar Vesktop/Discord'un `Local Storage` verisinden okunur; her hesap icin
+ayri `.env.<hesap>` dosyasi tutulur (chmod 600, git'e girmez):
+
+```bash
+./hesap.sh                 # mevcut hesaplari ve aktif olani listele
+./hesap.sh mermerbaba      # mermerbaba hesabina gec
+./hesap.sh ihtiyarmermer   # ihtiyarmermer hesabina gec
+```
+
+Not: bazi kuyruk kanallari (or. `#waitlist-eu`) **bolge rolu** ister
+(`Waitlist [EU]`). Hesapta bu rol yoksa bot kanali goremez ve uyari basar;
+rol Discord arayuzunden alinmali (bot kendine rol veremez).
 
 ---
 
@@ -40,16 +149,20 @@ pip install discord.py ddddocr requests python-dotenv
 
 Create a file named `.env` in the project folder:
 
-DISCORD_TOKEN=your_token_here  
-GUILD_ID=your_server_id  
-CHANNEL_ID=target_channel_id  
-BOT_ID=target_bot_id  
+DISCORD_TOKEN=your_token_here
+GUILD_ID=your_server_id
+CHANNEL_ID=target_channel_id
+BOT_ID=target_bot_id
 
 ---
 
 ### 3. Run the Bot
 
-python main.py  
+```bash
+python main.py
+```
+
+To join again after a queue ends, type `r` + Enter in the console to reset the join state.
 
 ---
 
@@ -59,6 +172,8 @@ python main.py
 - Your Discord account token used for login  
 - Gives full access to your account session  
 - ⚠️ Never share it with anyone  
+- ⚠️ This is **not** your browser cookie header. Values like `__dcfduid`, `__sdcfduid`, `cf_clearance` are Cloudflare/session cookies and will not work.  
+- The token is the value stored under `Local Storage → https://discord.com → token` in your browser's DevTools.  
 
 ---
 
@@ -128,7 +243,7 @@ When a successful join happens:
 - A high-pitched alert sound is played
 - Helps you instantly notice successful queue entry
 
-(Windows only — falls back to beep if unavailable)
+(On Windows it beeps through `winsound`; elsewhere it rings the terminal bell.)
 
 ---
 
